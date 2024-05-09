@@ -39,7 +39,7 @@ impl core::hash::BuildHasher for FxSeededState {
 
 #[cfg(test)]
 mod tests {
-    use core::hash::BuildHasher;
+    use core::hash::{BuildHasher, Hasher};
 
     use crate::{FxHashMapSeed, FxSeededState};
 
@@ -49,8 +49,8 @@ mod tests {
         let b = FxHashMapSeed::<&str, u32>::with_hasher(FxSeededState::with_seed(2));
 
         assert_ne!(
-            a.hasher().build_hasher().hash,
-            b.hasher().build_hasher().hash
+            a.hasher().build_hasher().finish(),
+            b.hasher().build_hasher().finish()
         );
     }
 }

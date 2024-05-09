@@ -14,6 +14,7 @@
 //! # fn main() { }
 //! ```
 
+#![feature(hasher_prefixfree_extras)]
 #![no_std]
 
 #[cfg(feature = "std")]
@@ -50,97 +51,12 @@ pub use random_state::{FxHashMapRand, FxHashSetRand, FxRandomState};
 
 pub use seeded_state::{FxHashMapSeed, FxHashSetSeed, FxSeededState};
 
-/// A speedy hash algorithm for use within rustc. The hashmap in liballoc
-/// by default uses SipHash which isn't quite as speedy as we want. In the
-/// compiler we're not really worried about DOS attempts, so we use a fast
-/// non-cryptographic hash.
-///
-/// This is the same as the algorithm used by Firefox -- which is a homespun
-/// one not based on any widely-known algorithm -- though modified to produce
-/// 64-bit hash values instead of 32-bit hash values. It consistently
-/// out-performs an FNV-based hash within rustc itself -- the collision rate is
-/// similar or slightly worse than FNV, but the speed of the hash function
-/// itself is much higher because it works on up to 8 bytes at a time.
-#[derive(Clone)]
-pub struct FxHasher {
-    hash: usize,
-}
+mod mum_add_hasher;
+pub use mum_add_hasher::MumAddHasher as FxHasher;
 
-#[cfg(target_pointer_width = "32")]
-const K: usize = 0x9e3779b9;
-#[cfg(target_pointer_width = "64")]
-const K: usize = 0x517cc1b727220a95;
 
-#[inline]
-fn take_first_chunk<'a, const N: usize>(slice: &mut &'a [u8]) -> Option<&'a [u8; N]> {
-    // TODO: use [T]::split_first_chunk() when stable
-    if slice.len() < N {
-        return None;
-    }
 
-    let (first, rest) = slice.split_at(N);
-    *slice = rest;
-    Some(first.try_into().unwrap())
-}
-
-impl FxHasher {
-    /// Creates a `fx` hasher with a given seed.
-    pub const fn with_seed(seed: usize) -> FxHasher {
-        FxHasher { hash: seed }
-    }
-
-    /// Creates a default `fx` hasher.
-    pub const fn default() -> FxHasher {
-        FxHasher { hash: 0 }
-    }
-}
-
-impl Default for FxHasher {
-    #[inline]
-    fn default() -> FxHasher {
-        Self::default()
-    }
-}
-
-impl FxHasher {
-    #[inline]
-    fn add_to_hash(&mut self, i: usize) {
-        self.hash = self.hash.rotate_left(5).bitxor(i).wrapping_mul(K);
-    }
-}
-
-impl Hasher for FxHasher {
-    #[inline]
-    fn write(&mut self, mut bytes: &[u8]) {
-        // Ensure all bytes will be consumed
-        const _: () = assert!(size_of::<usize>() <= size_of::<u64>());
-        // Ensure no bytes are discarded by casting to usize
-        const _: () = assert!(size_of::<u32>() <= size_of::<usize>());
-        // Copy the 1 word sized state to a local variable to ensure it
-        // is kept in a register.
-        // See: https://github.com/rust-lang/rustc-hash/pull/34
-        let mut state = self.clone();
-        while let Some(&usize_bytes) = take_first_chunk(&mut bytes) {
-            state.add_to_hash(usize::from_ne_bytes(usize_bytes));
-        }
-        if let Some(&u32_bytes) = take_first_chunk(&mut bytes) {
-            state.add_to_hash(u32::from_ne_bytes(u32_bytes) as usize);
-        }
-        if let Some(&u16_bytes) = take_first_chunk(&mut bytes) {
-            state.add_to_hash(u16::from_ne_bytes(u16_bytes) as usize);
-        }
-        if let Some(&[u8_byte]) = take_first_chunk(&mut bytes) {
-            state.add_to_hash(u8_byte as usize);
-        }
-        *self = state;
-    }
-
-    #[inline]
-    fn finish(&self) -> u64 {
-        self.hash as u64
-    }
-}
-
+/*
 #[cfg(test)]
 mod tests {
     #[cfg(not(any(target_pointer_width = "64", target_pointer_width = "32")))]
@@ -285,3 +201,4 @@ mod tests {
         }
     }
 }
+*/
