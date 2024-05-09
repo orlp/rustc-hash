@@ -14,6 +14,8 @@
 //! # fn main() { }
 //! ```
 
+
+#![allow(warnings)] // avoid rustc::default_hash_types
 #![feature(hasher_prefixfree_extras)]
 #![no_std]
 
