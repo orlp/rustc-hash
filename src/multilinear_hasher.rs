@@ -89,12 +89,18 @@ pub struct MultilinearHasher {
 }
 
 impl Default for MultilinearHasher {
+    #[inline]
     fn default() -> Self {
         Self { hash: 0, rng_a: SEED3, rng_b: SEED4 }
     }
 }
 
 impl MultilinearHasher {
+    #[inline]
+    pub fn with_seed(seed: usize) -> Self {
+        Self { hash: 0, rng_a: seed as u64 ^ SEED3, rng_b: seed as u64 ^ SEED4 }
+    }
+
     #[inline]
     fn gen_rng(&mut self) -> u64 {
         // A very mediocre RNG, but it is important that it is non-linear,
