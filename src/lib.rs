@@ -53,9 +53,11 @@ pub use random_state::{FxHashMapRand, FxHashSetRand, FxRandomState};
 
 pub use seeded_state::{FxHashMapSeed, FxHashSetSeed, FxSeededState};
 
-mod mum_add_hasher;
-pub use mum_add_hasher::MumAddHasher as FxHasher;
+// mod mum_add_hasher;
+// pub use mum_add_hasher::MumAddHasher as FxHasher;
 
+mod multilinear_hasher;
+pub use multilinear_hasher::MultilinearHasher as FxHasher;
 
 
 /*
