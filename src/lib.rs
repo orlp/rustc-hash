@@ -59,8 +59,11 @@ pub use seeded_state::{FxHashMapSeed, FxHashSetSeed, FxSeededState};
 // mod multilinear_hasher;
 // pub use multilinear_hasher::MultilinearHasher as FxHasher;
 
-mod poly_hasher;
-pub use poly_hasher::PolyHasher as FxHasher;
+// mod poly_hasher;
+// pub use poly_hasher::PolyHasher as FxHasher;
+
+mod poly_hasher_ilp;
+pub use poly_hasher_ilp::PolyHasher as FxHasher;
 
 /*
 #[cfg(test)]

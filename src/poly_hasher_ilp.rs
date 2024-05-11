@@ -80,9 +80,15 @@ fn hash_bytes(mut bytes: &[u8]) -> u64 {
 
 
 /// Fast non-collision-resistant hash.
-#[derive(Default)]
 pub struct PolyHasher {
     hash: u64,
+    mult: u64,
+}
+
+impl Default for PolyHasher {
+    fn default() -> Self {
+        Self { hash: 0, mult: 1 }
+    }
 }
 
 // "Computationally Easy, Spectrally Good Multipliers for Congruential
@@ -92,12 +98,20 @@ const K: u64 = 0xf1357aea2e62a9c5;
 impl PolyHasher {
     #[inline]
     pub fn with_seed(seed: usize) -> Self {
-        Self { hash: 0 }
+        Self { hash: seed as u64, mult: 1 }
     }
 
     #[inline]
     fn add_to_hash(&mut self, x: u64) {
-        self.hash = self.hash.wrapping_add(x).wrapping_mul(K);
+        // This is more multiplications than the Horner form
+        //     ((((m0 * k) + m1) * k) + m2) * k
+        // but in return it has much better instruction-level parallelism as the
+        // compiler in all fixed-size cases will precompute mult, giving the
+        // expression
+        //     m0 * k0 + m1 * k1 + m2 * k2 + ...
+        // which is much better for latency as well.
+        self.mult = self.mult.wrapping_mul(K);
+        self.hash = self.hash.wrapping_add(x.wrapping_mul(self.mult));
     }
 }
 
